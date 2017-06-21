@@ -2,8 +2,10 @@
  * Author: 
  * Creation date: 19/06/17
  */
-MACHINE Elevator_ctx
+MACHINE
+    Elevator_ctx
     
-SETS FLOOR; ELEVATOR
+SETS
+    FLOOR; ELEVATOR
 
 END

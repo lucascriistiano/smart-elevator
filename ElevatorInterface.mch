@@ -6,13 +6,13 @@ MACHINE
     ElevatorInterface
     
 SEES
-    Elevator_ctx, IdChecker_ctx
+    Elevator_ctx, People_ctx
 
 INCLUDES
     Elevator
     
 EXTENDS
-    IdChecker
+    IdChecker, PeopleInfo
     
 OPERATIONS
     elnum <-- int_call_elevator(current_floor, desired_floor, user) =

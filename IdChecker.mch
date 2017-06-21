@@ -2,19 +2,26 @@
  * Author: Lucas Cristiano C. Dantas
  * Creation date: 19/06/17
  */
-MACHINE IdChecker
+MACHINE
+    IdChecker
 
-SEES IdChecker_ctx
+SEES
+    People_ctx
 
-VARIABLES authorized_people
+VARIABLES
+    authorized_people
     
-SETS RESULT = { authorized, not_authorized }
+SETS
+    RESULT = { authorized, not_authorized }
     
-INVARIANT authorized_people <: PEOPLE
+INVARIANT
+    authorized_people <: PEOPLE
     
-INITIALISATION authorized_people := {}
+INITIALISATION
+    authorized_people := {}
 
 OPERATIONS
+    
     idchecker_authorize(user) =
         PRE user : PEOPLE THEN
             authorized_people := authorized_people \/ { user }
