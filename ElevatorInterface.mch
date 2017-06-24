@@ -21,10 +21,16 @@ OPERATIONS
             & user: PEOPLE & current_floor /= desired_floor
             & user: authorized_people
         THEN
-            ANY nn WHERE nn: ELEVATOR THEN
-                //TODO Select best elevator to user
-                elnum := nn
-            END
+            //TODO Select best elevator to user
+            elnum <-- elev_call_elevator(desired_floor)
         END
+          
+//    ff <-- int_current_floor(elevator) =
+//        PRE
+//            elevator: ELEVATOR
+//        THEN
+//            ff <-- elev_current_floor(elevator)
+//        END
+
 
 END
