@@ -4,20 +4,34 @@
  */
 MACHINE
     Elevator
-    
+
 SEES
-    Elevator_ctx
+    Elevator_ctx, People_ctx
     
+EXTENDS
+    PeopleInfo
+
 VARIABLES
-    current_floor, elevator_floor_order, elevator_weight, internal_door_state, floor_door_state
+    current_floor,
+    elevator_floor_order,
+    elevator_weight,
+    internal_door_state,
+    floor_door_state,
+    elevator_people
+//    choosen_elevator,
+//    destination_floor
     
 INVARIANT
     current_floor: ELEVATOR --> FLOOR
     & elevator_floor_order: ELEVATOR --> seq(FLOOR)
     & elevator_weight: ELEVATOR --> NAT
     & internal_door_state: ELEVATOR --> DOOR_STATE
-    & !ee.(ee: ELEVATOR => (internal_door_state(ee) = CLOSED => elevator_weight(ee) <= WEIGHT_LIMIT))
     & floor_door_state: (FLOOR * ELEVATOR) --> DOOR_STATE
+    & elevator_people: ELEVATOR --> POW(PEOPLE)
+//    & choosen_elevator: PEOPLE +-> ELEVATOR
+//    & destination_floor: PEOPLE +-> FLOOR
+    & !ee.(ee: ELEVATOR => (internal_door_state(ee) = CLOSED => elevator_weight(ee) <= WEIGHT_LIMIT))
+    & !(ee).(ee: ELEVATOR => elevator_weight(ee) = SIGMA uu.(uu: elevator_people(ee) | people_weight(uu)))
     & !(ff,ee).(ff: FLOOR & ee: ELEVATOR => (floor_door_state(ff, ee) = OPEN => current_floor(ee) = ff))
     & !(ff,ee).(ff: FLOOR & ee: ELEVATOR => (ff = current_floor(ee) => (floor_door_state(ff, ee) = internal_door_state(ee))))
 
@@ -27,6 +41,9 @@ INITIALISATION
     || elevator_weight := ELEVATOR * { 0 }
     || internal_door_state := ELEVATOR * { CLOSED }
     || floor_door_state := (FLOOR * ELEVATOR) * { CLOSED }
+    || elevator_people := ELEVATOR * { {} }
+//    || choosen_elevator := {}
+//    || destination_floor := {}
       
 OPERATIONS
     ff <-- elev_current_floor(ee) =
@@ -100,19 +117,35 @@ OPERATIONS
             current_floor(ee) := current_floor(ee) - 1
         END;
         
-//    elev_enter(ee, uu) =
+    elev_enter(ee, uu) =
+        PRE
+            ee: ELEVATOR
+            & uu: PEOPLE
+            & internal_door_state(ee) = OPEN
+            & uu /: elevator_people(ee)
+        THEN
+            elevator_people(ee) := elevator_people(ee) \/ { uu }
+            || elevator_weight(ee) := elevator_weight(ee) + people_weight(uu)
+        END;
 
-
-//    elev_exit(ee, uu) =
-    
-    
+    elev_exit(ee, uu) =
+        PRE
+            ee: ELEVATOR
+            & uu: PEOPLE
+            & internal_door_state(ee) = OPEN
+            & uu: elevator_people(ee)
+            //TODO Verificar ao fechar a porta no andar se ninguem mais tem que descer no andar
+        THEN
+            elevator_people(ee) := elevator_people(ee) - { uu }
+            || elevator_weight(ee) := elevator_weight(ee) - people_weight(uu)
+        END;
 
     elnum <-- elev_call_elevator(ee, ff) =
         PRE
             ee: ELEVATOR & ff: FLOOR
         THEN
             elevator_floor_order(ee) := elevator_floor_order(ee) <- ff //Adiciona andar na fila do elevador
-            || elnum := ee 
+            || elnum := ee
         END
 
 END

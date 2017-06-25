@@ -9,66 +9,60 @@ SEES
     People_ctx, Elevator_ctx
 
 VARIABLES
-    authorized_people, authorized_floors
+    authorized_floors
     
 SETS
-    RESULT = { authorized, not_authorized }
+    RESULT = { AUTHORIZED, NOT_AUTHORIZED }
     
 INVARIANT
-    authorized_people <: PEOPLE
-    & authorized_floors: authorized_people --> POW(FLOOR)
+    authorized_floors: PEOPLE --> POW(FLOOR)
     
 INITIALISATION
-    authorized_people := {}
-    || authorized_floors := {}
+    authorized_floors := PEOPLE * { {} }
 
 OPERATIONS
     
-    idchecker_authorize(uu) =
+    idchecker_authorize_floor(uu, ff) =
         PRE
             uu: PEOPLE
-            & uu /: authorized_people
+            & ff: FLOOR
+            & uu: dom(authorized_floors)
+            & ff /: authorized_floors(uu)
         THEN
-            authorized_people := authorized_people \/ { uu }
-            || authorized_floors(uu) := {}
+            authorized_floors(uu) := authorized_floors(uu) \/ { ff }
         END;
         
-    idchecker_revoke(uu) =
-        PRE uu: PEOPLE THEN
-            authorized_people := authorized_people - { uu }
-            || authorized_floors := { uu } <<| authorized_floors
-        END;
-
     idchecker_revoke_floor(uu, ff) =
         PRE
-            uu: authorized_people
+            uu: PEOPLE
             & ff: FLOOR
+            & uu: dom(authorized_floors)
+            & ff: authorized_floors(uu)
         THEN
             authorized_floors(uu) := authorized_floors(uu) - { ff }
         END;
 
-    res <-- idchecker_check_authorization(uu) =
+    idchecker_revoke_all(uu) =
         PRE
             uu: PEOPLE
+            & uu: dom(authorized_floors)
+            & authorized_floors(uu) /= {}
         THEN
-            IF uu: authorized_people THEN res := authorized
-            ELSE res := not_authorized
-            END
+            authorized_floors(uu) := {}
         END;
 
     res <-- idchecker_check_floor_authorization(uu, ff) =
         PRE
             uu: PEOPLE
             & ff: FLOOR
+            & uu: dom(authorized_floors)
         THEN
             IF
-                uu: authorized_people
-                & uu: dom(authorized_floors)
-                & ff: authorized_floors(uu)
+                ff: authorized_floors(uu)
             THEN
-                res := authorized
+                res := AUTHORIZED
             ELSE
-                res := not_authorized
+                res := NOT_AUTHORIZED
             END
         END
     
