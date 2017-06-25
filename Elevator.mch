@@ -99,6 +99,13 @@ OPERATIONS
         THEN
             current_floor(ee) := current_floor(ee) - 1
         END;
+        
+//    elev_enter(ee, uu) =
+
+
+//    elev_exit(ee, uu) =
+    
+    
 
     elnum <-- elev_call_elevator(ee, ff) =
         PRE
