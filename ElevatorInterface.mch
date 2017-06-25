@@ -11,26 +11,32 @@ SEES
 INCLUDES
     Elevator
     
+PROMOTES
+    elev_open_door, elev_close_door, elev_go_up, elev_go_down
+    
 EXTENDS
     IdChecker, PeopleInfo
     
 OPERATIONS
-    elnum <-- int_call_elevator(current_floor, desired_floor, user) =
+    elnum <-- int_call_elevator(call_floor, desired_floor, user) =
         PRE 
-            current_floor: FLOOR & desired_floor: FLOOR
-            & user: PEOPLE & current_floor /= desired_floor
+            call_floor: FLOOR & desired_floor: FLOOR
+            & user: PEOPLE & call_floor /= desired_floor
             & user: authorized_people
         THEN
-            //TODO Select best elevator to user
-            elnum <-- elev_call_elevator(desired_floor)
-        END
+            //TODO Decidir melhor elevador para chamar para o usuário
+            ANY ee WHERE ee: ELEVATOR
+            THEN
+                elnum <-- elev_call_elevator(ee, desired_floor)
+            END
+        END;
           
-//    ff <-- int_current_floor(elevator) =
-//        PRE
-//            elevator: ELEVATOR
-//        THEN
-//            ff <-- elev_current_floor(elevator)
-//        END
+    ff <-- int_current_floor(elevator) =
+        PRE
+            elevator: ELEVATOR
+        THEN
+            ff <-- elev_current_floor(elevator)
+        END
 
 
 END
