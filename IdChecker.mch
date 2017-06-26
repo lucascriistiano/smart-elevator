@@ -2,17 +2,15 @@
  * Author: Lucas Cristiano C. Dantas
  * Creation date: 19/06/17
  */
+
 MACHINE
     IdChecker
 
 SEES
-    People_ctx, Elevator_ctx
+    People_ctx, Elevator_ctx, IdChecker_ctx
 
 VARIABLES
     authorized_floors
-    
-SETS
-    RESULT = { AUTHORIZED, NOT_AUTHORIZED }
     
 INVARIANT
     authorized_floors: PEOPLE --> POW(FLOOR)

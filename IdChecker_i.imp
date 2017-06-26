@@ -1,0 +1,97 @@
+/* IdChecker_i
+ * Author: Lucas Cristiano
+ * Creation date: 26/06/2017
+ */
+
+IMPLEMENTATION 
+    IdChecker_i
+
+REFINES
+    IdChecker
+
+SEES
+    People_ctx, Elevator_ctx, IdChecker_ctx
+    
+CONCRETE_VARIABLES
+    authorized_floors_i
+
+INVARIANT
+    authorized_floors_i: PEOPLE --> FLOOR --> BOOL
+//    & authorized_floors = conjunto onde authorized_floors_i(uu)(ff) = TRUE
+
+INITIALISATION
+//    authorized_floors_i := PEOPLE * { {} }
+    BEGIN
+        authorized_floors_i := {};
+        VAR pp IN
+            pp := 1;
+            WHILE pp < card(PEOPLE) DO
+                authorized_floors_i(pp) := {};
+                VAR ff IN
+                    ff := 1;
+                    WHILE ff < card(FLOOR) DO
+                        authorized_floors_i(pp)(ff) := FALSE;
+                        ff := ff + 1
+                    INVARIANT ff < card(FLOOR)
+                    VARIANT card(FLOOR) - ff
+                    END 
+                END;
+                pp := pp + 1
+            INVARIANT pp < card(PEOPLE)
+            VARIANT card(PEOPLE) - pp
+            END
+        END
+    END;
+
+OPERATIONS
+
+    idchecker_authorize_floor(uu, ff) =
+        BEGIN
+            //uu: PEOPLE & ff: FLOOR
+            //& uu: dom(authorized_floors)
+            //& ff /: authorized_floors(uu)
+            
+            authorized_floors_i(uu)(ff) := TRUE
+        END;
+
+    idchecker_revoke_floor(uu, ff) =
+        BEGIN
+            //uu: PEOPLE & ff: FLOOR
+            //& uu: dom(authorized_floors)
+            //& ff: authorized_floors(uu)
+
+            authorized_floors_i(uu)(ff) := FALSE
+        END;
+
+    idchecker_revoke_all(uu) =
+        BEGIN
+            //uu: PEOPLE
+            //& uu: dom(authorized_floors)
+            //& authorized_floors(uu) /= {}
+
+            VAR ff IN
+                ff := 1;
+                WHILE ff < card(FLOOR) DO
+                    authorized_floors_i(uu)(ff) := FALSE;
+                    ff := ff + 1
+                INVARIANT ff < card(FLOOR)
+                VARIANT card(FLOOR) - ff
+                END
+            END
+        END;
+
+    res <-- idchecker_check_floor_authorization(uu, ff) =
+        BEGIN
+            //uu: PEOPLE & ff: FLOOR
+            //& uu: dom(authorized_floors)
+
+            IF
+                authorized_floors_i(uu)(ff) = TRUE
+            THEN
+                res := AUTHORIZED
+            ELSE
+                res := NOT_AUTHORIZED
+            END
+        END
+
+ END

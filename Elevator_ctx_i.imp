@@ -1,0 +1,22 @@
+/* Elevator_ctx_i
+ * Author: Lucas Cristiano
+ * Creation date: 26/06/2017
+ */
+
+IMPLEMENTATION
+    Elevator_ctx_i
+
+REFINES
+    Elevator_ctx
+    
+//SETS
+//    ELEVATOR; DOOR_STATE = {OPEN, CLOSED}
+    
+VALUES
+    ELEVATOR = 1..3;
+    FLOOR = 0..4;
+    GROUND_FLOOR = 0;
+    TOP_FLOOR = 4;
+    WEIGHT_LIMIT = 20
+
+ END

@@ -1,0 +1,15 @@
+/* People_ctx_i
+ * Author: Lucas Cristiano
+ * Creation date: 26/06/2017
+ */
+
+IMPLEMENTATION
+    People_ctx_i
+
+REFINES
+    People_ctx
+
+VALUES
+    PEOPLE = 1..5
+
+ END

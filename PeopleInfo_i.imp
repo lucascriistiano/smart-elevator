@@ -1,0 +1,52 @@
+/* PeopleInfo_i
+ * Author: Lucas Cristiano
+ * Creation date: 26/06/2017
+ */
+
+IMPLEMENTATION
+    PeopleInfo_i
+
+REFINES
+    PeopleInfo
+
+SEES
+    People_ctx
+
+CONCRETE_VARIABLES
+    people_weight
+    
+INVARIANT
+    people_weight: PEOPLE --> NAT1
+    
+INITIALISATION
+    BEGIN
+        people_weight := PEOPLE * { 1 }
+    END
+//    BEGIN
+//        VAR ww IN
+//            ww := 1;
+//            WHILE ww < 5 DO
+//                people_weight(ww) := ww;
+//                ww := ww + 1
+//            INVARIANT ww <= 5
+//            VARIANT 5 - ww
+//            END
+//        END
+//    END
+
+OPERATIONS
+    
+    peopleinfo_set_weight(user, weight) =
+        BEGIN
+            IF weight > 0
+            THEN
+                people_weight(user) := weight
+            END
+        END;
+        
+    weight <-- peopleinfo_query_weight(user) =
+        BEGIN
+            weight := people_weight(user)
+        END
+
+ END
