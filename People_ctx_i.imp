@@ -10,6 +10,7 @@ REFINES
     People_ctx
 
 VALUES
-    PEOPLE = 1..5
+    PEOPLE = 0..4;
+    PEOPLE_LIMIT = 4
 
  END

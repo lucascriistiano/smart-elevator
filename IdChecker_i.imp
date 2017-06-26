@@ -16,32 +16,29 @@ CONCRETE_VARIABLES
     authorized_floors_i
 
 INVARIANT
-    authorized_floors_i: PEOPLE --> FLOOR --> BOOL
-//    & authorized_floors = conjunto onde authorized_floors_i(uu)(ff) = TRUE
+    authorized_floors_i: (PEOPLE*FLOOR) --> BOOL
+    & !pp.(pp:dom(authorized_floors) => authorized_floors(pp) = ran({pp} <| dom(authorized_floors_i |> {TRUE})))
 
 INITIALISATION
-//    authorized_floors_i := PEOPLE * { {} }
     BEGIN
-        authorized_floors_i := {};
         VAR pp IN
-            pp := 1;
-            WHILE pp < card(PEOPLE) DO
-                authorized_floors_i(pp) := {};
+            pp := 0;
+            WHILE pp < PEOPLE_LIMIT DO
                 VAR ff IN
-                    ff := 1;
-                    WHILE ff < card(FLOOR) DO
-                        authorized_floors_i(pp)(ff) := FALSE;
+                    ff := GROUND_FLOOR;
+                    WHILE ff < TOP_FLOOR DO
+                        authorized_floors_i(pp,ff) := FALSE;
                         ff := ff + 1
-                    INVARIANT ff < card(FLOOR)
-                    VARIANT card(FLOOR) - ff
+                    INVARIANT ff < TOP_FLOOR
+                    VARIANT TOP_FLOOR - ff
                     END 
                 END;
                 pp := pp + 1
-            INVARIANT pp < card(PEOPLE)
-            VARIANT card(PEOPLE) - pp
+            INVARIANT pp < PEOPLE_LIMIT
+            VARIANT PEOPLE_LIMIT - pp
             END
         END
-    END;
+    END
 
 OPERATIONS
 
@@ -51,7 +48,7 @@ OPERATIONS
             //& uu: dom(authorized_floors)
             //& ff /: authorized_floors(uu)
             
-            authorized_floors_i(uu)(ff) := TRUE
+            authorized_floors_i(uu, ff) := TRUE
         END;
 
     idchecker_revoke_floor(uu, ff) =
@@ -60,7 +57,7 @@ OPERATIONS
             //& uu: dom(authorized_floors)
             //& ff: authorized_floors(uu)
 
-            authorized_floors_i(uu)(ff) := FALSE
+            authorized_floors_i(uu, ff) := FALSE
         END;
 
     idchecker_revoke_all(uu) =
@@ -70,9 +67,9 @@ OPERATIONS
             //& authorized_floors(uu) /= {}
 
             VAR ff IN
-                ff := 1;
-                WHILE ff < card(FLOOR) DO
-                    authorized_floors_i(uu)(ff) := FALSE;
+                ff := GROUND_FLOOR;
+                WHILE ff < TOP_FLOOR DO
+                    authorized_floors_i(uu, ff) := FALSE;
                     ff := ff + 1
                 INVARIANT ff < card(FLOOR)
                 VARIANT card(FLOOR) - ff
@@ -85,12 +82,14 @@ OPERATIONS
             //uu: PEOPLE & ff: FLOOR
             //& uu: dom(authorized_floors)
 
-            IF
-                authorized_floors_i(uu)(ff) = TRUE
-            THEN
-                res := AUTHORIZED
-            ELSE
-                res := NOT_AUTHORIZED
+            VAR aa IN
+                aa := authorized_floors_i(uu, ff);
+                IF aa = TRUE
+                THEN
+                    res := AUTHORIZED
+                ELSE
+                    res := NOT_AUTHORIZED
+                END
             END
         END
 

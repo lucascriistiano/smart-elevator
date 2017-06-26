@@ -5,8 +5,13 @@
 
 MACHINE
     People_ctx
-    
-SETS
-    PEOPLE
+
+CONSTANTS
+    PEOPLE,
+    PEOPLE_LIMIT
+
+PROPERTIES
+    PEOPLE = 0..4
+    & PEOPLE_LIMIT = 4
 
 END
