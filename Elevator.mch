@@ -46,6 +46,7 @@ INITIALISATION
 //    || destination_floor := {}
       
 OPERATIONS
+
     ff <-- elev_current_floor(ee) =
         PRE
             ee: ELEVATOR
@@ -67,14 +68,26 @@ OPERATIONS
             ss := internal_door_state(ee)
         END;
         
+    elnum <-- elev_call_elevator(ee, call_floor, dest_floor) =
+        PRE
+            ee: ELEVATOR
+            & call_floor: FLOOR
+            & dest_floor: FLOOR
+            & call_floor /= dest_floor
+        THEN
+            elevator_floor_order(ee) := elevator_floor_order(ee) ^ [ call_floor, dest_floor ] //Adiciona andar na fila do elevador
+            || elnum := ee
+        END;
+
     elev_open_door(ee, ff) =
         PRE
-            ee: ELEVATOR & ff: FLOOR
+            ee: ELEVATOR
+            & ff: FLOOR
             & internal_door_state(ee) = CLOSED
             & floor_door_state(ff, ee) = CLOSED
-            & current_floor(ee) = ff               //o elevador está no piso daquele andar
+            & current_floor(ee) = ff               //o elevador esta no piso daquele andar
             & elevator_floor_order(ee) /= []
-            & first(elevator_floor_order(ee)) = ff //a próxima parada é naquele andar
+            & first(elevator_floor_order(ee)) = ff //a proxima parada eh naquele andar
         THEN
             internal_door_state(ee) := OPEN
             || floor_door_state(ff, ee) := OPEN
@@ -83,38 +96,15 @@ OPERATIONS
 
      elev_close_door(ee, ff) =
         PRE
-            ee: ELEVATOR & ff: FLOOR
+            ee: ELEVATOR
+            & ff: FLOOR
             & internal_door_state(ee) = OPEN
             & floor_door_state(ff, ee) = OPEN
-            & current_floor(ee) = ff               //o elevador está no piso daquele andar
+            & current_floor(ee) = ff               //o elevador esta no piso daquele andar
             & elevator_weight(ee) <= WEIGHT_LIMIT
         THEN
             internal_door_state(ee) := CLOSED
             || floor_door_state(ff, ee) := CLOSED
-        END;
-        
-    elev_go_up(ee) =
-        PRE
-            ee: ELEVATOR
-            & elevator_floor_order(ee) /= []                      //alguém chamou o elevador
-            & first(elevator_floor_order(ee)) > current_floor(ee) //a próxima parada é acima do andar atual
-            & current_floor(ee) < TOP_FLOOR
-            & internal_door_state(ee) = CLOSED
-            & floor_door_state(current_floor(ee), ee) = CLOSED
-        THEN
-            current_floor(ee) := current_floor(ee) + 1
-        END;
-        
-    elev_go_down(ee) =
-        PRE
-            ee: ELEVATOR
-            & elevator_floor_order(ee) /= []                      //alguém chamou o elevador
-            & first(elevator_floor_order(ee)) < current_floor(ee) //a próxima parada é acima do andar atual
-            & current_floor(ee) > GROUND_FLOOR
-            & internal_door_state(ee) = CLOSED
-            & floor_door_state(current_floor(ee), ee) = CLOSED
-        THEN
-            current_floor(ee) := current_floor(ee) - 1
         END;
         
     elev_enter(ee, uu) =
@@ -134,18 +124,33 @@ OPERATIONS
             & uu: PEOPLE
             & internal_door_state(ee) = OPEN
             & uu: elevator_people(ee)
-            //TODO Verificar ao fechar a porta no andar se ninguem mais tem que descer no andar
         THEN
             elevator_people(ee) := elevator_people(ee) - { uu }
             || elevator_weight(ee) := elevator_weight(ee) - people_weight(uu)
         END;
 
-    elnum <-- elev_call_elevator(ee, ff) =
+    elev_go_up(ee) =
         PRE
-            ee: ELEVATOR & ff: FLOOR
+            ee: ELEVATOR
+            & elevator_floor_order(ee) /= []                      //alguem chamou o elevador
+            & first(elevator_floor_order(ee)) > current_floor(ee) //a proxima parada eh acima do andar atual
+            & current_floor(ee) < TOP_FLOOR
+            & internal_door_state(ee) = CLOSED
+            & floor_door_state(current_floor(ee), ee) = CLOSED
         THEN
-            elevator_floor_order(ee) := elevator_floor_order(ee) <- ff //Adiciona andar na fila do elevador
-            || elnum := ee
+            current_floor(ee) := current_floor(ee) + 1
+        END;
+
+    elev_go_down(ee) =
+        PRE
+            ee: ELEVATOR
+            & elevator_floor_order(ee) /= []                      //alguem chamou o elevador
+            & first(elevator_floor_order(ee)) < current_floor(ee) //a proxima parada eh abaixo do andar atual
+            & current_floor(ee) > GROUND_FLOOR
+            & internal_door_state(ee) = CLOSED
+            & floor_door_state(current_floor(ee), ee) = CLOSED
+        THEN
+            current_floor(ee) := current_floor(ee) - 1
         END
 
 END
