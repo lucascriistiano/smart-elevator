@@ -1,9 +1,9 @@
-/* ElevatorInterface
+/* ElevatorController
  * Author: Lucas Cristiano C. Dantas
  * Creation date: 19/06/17
  */        
 MACHINE
-    ElevatorInterface
+    ElevatorController
     
 SEES
     Elevator_ctx, People_ctx
@@ -36,7 +36,7 @@ INITIALISATION
     
 OPERATIONS
 
-    elnum <-- int_call_elevator(call_floor, dest_floor, user) =
+    elnum <-- ctrl_call_elevator(call_floor, dest_floor, user) =
         PRE 
             call_floor: FLOOR & dest_floor: FLOOR & user: PEOPLE
             & call_floor /= dest_floor
@@ -59,7 +59,7 @@ OPERATIONS
             END
         END;
 
-    int_open_door(ee, ff) =
+    ctrl_open_door(ee, ff) =
         PRE
             ee: ELEVATOR & ff: FLOOR
             & internal_door_state(ee) = CLOSED
@@ -71,7 +71,7 @@ OPERATIONS
             elev_open_door(ee, ff)
         END;
 
-     int_close_door(ee, ff) =
+     ctrl_close_door(ee, ff) =
         PRE
             ee: ELEVATOR & ff: FLOOR
             & internal_door_state(ee) = OPEN
@@ -84,7 +84,7 @@ OPERATIONS
             elev_close_door(ee, ff)
         END;
 
-    int_elev_enter(ee, uu) =
+    ctrl_elev_enter(ee, uu) =
         PRE
             ee: ELEVATOR & uu: PEOPLE
             & internal_door_state(ee) = OPEN
@@ -99,7 +99,7 @@ OPERATIONS
             || origin_floor := { uu } <<| origin_floor
         END;
 
-    int_elev_exit(ee, uu) =
+    ctrl_elev_exit(ee, uu) =
         PRE
             ee: ELEVATOR & uu: PEOPLE
             & internal_door_state(ee) = OPEN
