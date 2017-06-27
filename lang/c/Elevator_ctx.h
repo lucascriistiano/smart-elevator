@@ -18,8 +18,8 @@ typedef enum
 #define Elevator_ctx__DOOR_STATE__max 2
 typedef enum
 {
-    Elevator_ctx__STOPPED,
-    Elevator_ctx__MOVING
+    Elevator_ctx__ATTENDING,
+    Elevator_ctx__FREE
     
 } Elevator_ctx__STATE;
 #define Elevator_ctx__STATE__max 2
