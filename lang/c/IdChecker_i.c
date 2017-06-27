@@ -43,6 +43,23 @@ void IdChecker__INITIALISATION(void)
 
 /* Clause OPERATIONS */
 
+void IdChecker__idchecker_check_floor_authorization(int32_t uu, int32_t ff, IdChecker_ctx__RESULT *res)
+{
+    {
+        bool aa;
+
+        aa = IdChecker__authorized_floors_i[uu][ff];
+        if(aa == true)
+        {
+            (*res) = IdChecker_ctx__AUTHORIZED;
+        }
+        else
+        {
+            (*res) = IdChecker_ctx__NOT_AUTHORIZED;
+        }
+    }
+}
+
 void IdChecker__idchecker_authorize_floor(int32_t uu, int32_t ff)
 {
     IdChecker__authorized_floors_i[uu][ff] = true;
@@ -57,29 +74,12 @@ void IdChecker__idchecker_revoke_all(int32_t uu)
 {
     {
         int32_t ff;
-        
+
         ff = Elevator_ctx__GROUND_FLOOR;
         while((ff) < (Elevator_ctx__TOP_FLOOR))
         {
             IdChecker__authorized_floors_i[uu][ff] = false;
             ff = ff+1;
-        }
-    }
-}
-
-void IdChecker__idchecker_check_floor_authorization(int32_t uu, int32_t ff, IdChecker_ctx__RESULT *res)
-{
-    {
-        bool aa;
-        
-        aa = IdChecker__authorized_floors_i[uu][ff];
-        if(aa == true)
-        {
-            (*res) = IdChecker_ctx__AUTHORIZED;
-        }
-        else
-        {
-            (*res) = IdChecker_ctx__NOT_AUTHORIZED;
         }
     }
 }

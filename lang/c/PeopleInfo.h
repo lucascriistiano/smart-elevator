@@ -5,6 +5,7 @@
 #include <stdbool.h>
 /* Clause SEES */
 #include "People_ctx.h"
+#include "OperationResult_ctx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,8 +24,8 @@ extern void PeopleInfo__INITIALISATION(void);
 
 /* Clause OPERATIONS */
 
-extern void PeopleInfo__peopleinfo_set_weight(int32_t user, int32_t weight);
-extern void PeopleInfo__peopleinfo_query_weight(int32_t user, int32_t *weight);
+extern void PeopleInfo__peopleinfo_query_weight(int32_t user, int32_t *weight, OperationResult_ctx__OPERATION_RESULT *res);
+extern void PeopleInfo__peopleinfo_set_weight(int32_t user, int32_t weight, OperationResult_ctx__OPERATION_RESULT *res);
 
 #ifdef __cplusplus
 }

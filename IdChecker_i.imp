@@ -41,6 +41,22 @@ INITIALISATION
     END
 
 OPERATIONS
+    
+    res <-- idchecker_check_floor_authorization(uu, ff) =
+        BEGIN
+            //uu: PEOPLE & ff: FLOOR
+            //& uu: dom(authorized_floors)
+
+            VAR aa IN
+                aa := authorized_floors_i(uu, ff);
+                IF aa = TRUE
+                THEN
+                    res := AUTHORIZED
+                ELSE
+                    res := NOT_AUTHORIZED
+                END
+            END
+        END;
 
     idchecker_authorize_floor(uu, ff) =
         BEGIN
@@ -73,22 +89,6 @@ OPERATIONS
                     ff := ff + 1
                 INVARIANT ff < card(FLOOR)
                 VARIANT card(FLOOR) - ff
-                END
-            END
-        END;
-
-    res <-- idchecker_check_floor_authorization(uu, ff) =
-        BEGIN
-            //uu: PEOPLE & ff: FLOOR
-            //& uu: dom(authorized_floors)
-
-            VAR aa IN
-                aa := authorized_floors_i(uu, ff);
-                IF aa = TRUE
-                THEN
-                    res := AUTHORIZED
-                ELSE
-                    res := NOT_AUTHORIZED
                 END
             END
         END

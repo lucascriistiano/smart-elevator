@@ -1,5 +1,5 @@
 /* PeopleInfo_i
- * Author: Lucas Cristiano
+ * Author: Lucas Cristiano C. Dantas
  * Creation date: 26/06/2017
  */
 
@@ -10,7 +10,7 @@ REFINES
     PeopleInfo
 
 SEES
-    People_ctx
+    People_ctx, OperationResult_ctx
 
 CONCRETE_VARIABLES
     people_weight
@@ -19,34 +19,44 @@ INVARIANT
     people_weight: PEOPLE --> NAT1
     
 INITIALISATION
-    BEGIN
-        people_weight := PEOPLE * { 1 }
-    END
 //    BEGIN
-//        VAR ww IN
-//            ww := 1;
-//            WHILE ww < 5 DO
-//                people_weight(ww) := ww;
-//                ww := ww + 1
-//            INVARIANT ww <= 5
-//            VARIANT 5 - ww
-//            END
-//        END
+//        people_weight := PEOPLE * { 1 }
 //    END
+    BEGIN
+        VAR pp IN
+            pp := 0;
+            WHILE pp <= PEOPLE_LIMIT DO
+                people_weight(pp) := pp + 1;
+                pp := pp + 1
+            INVARIANT pp <= PEOPLE_LIMIT & !pt.(pt: PEOPLE & pt < pp => people_weight(pt) /= 0)
+            VARIANT PEOPLE_LIMIT - pp
+            END
+        END
+    END
 
 OPERATIONS
-    
-    peopleinfo_set_weight(user, weight) =
+        
+    weight, res <-- peopleinfo_query_weight(user) =
         BEGIN
-            IF weight > 0
+            IF user >= 0 & user <= PEOPLE_LIMIT
             THEN
-                people_weight(user) := weight
+                weight := people_weight(user);
+                res := SUCCESS
+            ELSE
+                weight := 1;
+                res := ERROR
             END
         END;
         
-    weight <-- peopleinfo_query_weight(user) =
+    res <-- peopleinfo_set_weight(user, weight) =
         BEGIN
-            weight := people_weight(user)
+            IF user >= 0 & user <= PEOPLE_LIMIT & weight > 0
+            THEN
+                people_weight(user) := weight;
+                res := SUCCESS
+            ELSE
+                res := ERROR
+            END    
         END
 
  END

@@ -4,6 +4,7 @@
 
 /* Clause SEES */
 #include "People_ctx.h"
+#include "OperationResult_ctx.h"
 
 /* Clause CONCRETE_CONSTANTS */
 /* Basic constants */
@@ -16,27 +17,49 @@ static int32_t PeopleInfo__people_weight[5];
 void PeopleInfo__INITIALISATION(void)
 {
     
-    unsigned int i = 0;
     {
-        for(i = 0; i <= People_ctx__PEOPLE__max-1;i++)
         {
-            PeopleInfo__people_weight[i] = 1;
+            int32_t pp;
+            
+            pp = 0;
+            while((pp) <= (People_ctx__PEOPLE_LIMIT))
+            {
+                PeopleInfo__people_weight[pp] = pp+1;
+                pp = pp+1;
+            }
         }
     }
 }
 
 /* Clause OPERATIONS */
 
-void PeopleInfo__peopleinfo_set_weight(int32_t user, int32_t weight)
+void PeopleInfo__peopleinfo_query_weight(int32_t user, int32_t *weight, OperationResult_ctx__OPERATION_RESULT *res)
 {
-    if((weight) > (0))
+    if(((user) >= (0)) &&
+    ((user) <= (People_ctx__PEOPLE_LIMIT)))
     {
-        PeopleInfo__people_weight[user] = weight;
+        (*weight) = PeopleInfo__people_weight[user];
+        (*res) = OperationResult_ctx__SUCCESS;
+    }
+    else
+    {
+        (*weight) = 1;
+        (*res) = OperationResult_ctx__ERROR;
     }
 }
 
-void PeopleInfo__peopleinfo_query_weight(int32_t user, int32_t *weight)
+void PeopleInfo__peopleinfo_set_weight(int32_t user, int32_t weight, OperationResult_ctx__OPERATION_RESULT *res)
 {
-    (*weight) = PeopleInfo__people_weight[user];
+    if((((user) >= (0)) &&
+        ((user) <= (People_ctx__PEOPLE_LIMIT))) &&
+    ((weight) > (0)))
+    {
+        PeopleInfo__people_weight[user] = weight;
+        (*res) = OperationResult_ctx__SUCCESS;
+    }
+    else
+    {
+        (*res) = OperationResult_ctx__ERROR;
+    }
 }
 

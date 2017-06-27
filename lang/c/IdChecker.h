@@ -25,10 +25,10 @@ extern void IdChecker__INITIALISATION(void);
 
 /* Clause OPERATIONS */
 
+extern void IdChecker__idchecker_check_floor_authorization(int32_t uu, int32_t ff, IdChecker_ctx__RESULT *res);
 extern void IdChecker__idchecker_authorize_floor(int32_t uu, int32_t ff);
 extern void IdChecker__idchecker_revoke_floor(int32_t uu, int32_t ff);
 extern void IdChecker__idchecker_revoke_all(int32_t uu);
-extern void IdChecker__idchecker_check_floor_authorization(int32_t uu, int32_t ff, IdChecker_ctx__RESULT *res);
 
 #ifdef __cplusplus
 }

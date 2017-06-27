@@ -20,6 +20,20 @@ INITIALISATION
 
 OPERATIONS
     
+    res <-- idchecker_check_floor_authorization(uu, ff) =
+        PRE
+            uu: PEOPLE & ff: FLOOR
+            & uu: dom(authorized_floors)
+        THEN
+            IF
+                ff: authorized_floors(uu)
+            THEN
+                res := AUTHORIZED
+            ELSE
+                res := NOT_AUTHORIZED
+            END
+        END;
+    
     idchecker_authorize_floor(uu, ff) =
         PRE
             uu: PEOPLE & ff: FLOOR
@@ -45,20 +59,6 @@ OPERATIONS
             & authorized_floors(uu) /= {}
         THEN
             authorized_floors(uu) := {}
-        END;
-
-    res <-- idchecker_check_floor_authorization(uu, ff) =
-        PRE
-            uu: PEOPLE & ff: FLOOR
-            & uu: dom(authorized_floors)
-        THEN
-            IF
-                ff: authorized_floors(uu)
-            THEN
-                res := AUTHORIZED
-            ELSE
-                res := NOT_AUTHORIZED
-            END
         END
     
 END
