@@ -10,7 +10,7 @@ REFINES
     Elevator_ctx
 
 VALUES
-    ELEVATOR = 1..3;
+    ELEVATOR = 0..2;
     FLOOR = 0..4;
     GROUND_FLOOR = 0;
     TOP_FLOOR = 4;

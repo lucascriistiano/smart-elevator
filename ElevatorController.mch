@@ -50,24 +50,43 @@ OPERATIONS
             // Só pode entrar quem ja chamou o elevador naquele andar e foi direcionado para ele
 
             //Lista contem onde tem que parar para pegar e deixar as pessoas
-            
-            ANY ee WHERE ee: ELEVATOR
+            IF call_floor < dest_floor
             THEN
-                elnum <-- elev_call_elevator(ee, call_floor, dest_floor)
-                || choosen_elevator(user) := ee
-                || origin_floor(user) := call_floor
-                || destination_floor(user) := dest_floor
+                IF bool(#ee.(ee: ELEVATOR & elevator_direction(ee) = UP & elevator_weight(ee) + people_weight(user) <= WEIGHT_LIMIT)) = TRUE
+                THEN
+                    ANY ee WHERE ee: ELEVATOR & elevator_direction(ee) = UP & elevator_weight(ee) + people_weight(user) <= WEIGHT_LIMIT
+                    THEN
+                        elev_add_call_stops(ee, call_floor, dest_floor)
+                        || choosen_elevator(user) := ee
+                        || origin_floor(user) := call_floor
+                        || destination_floor(user) := dest_floor
+                        || elnum := ee
+                    END
+//                ELSE
+                    
+                END
+//            ELSE
+//                ANY ee WHERE ee: ELEVATOR & (ee = 2 or ee = 3)
+//                THEN
+//                    elnum <-- elev_call_elevator(ee, call_floor, dest_floor)
+//                    || choosen_elevator(user) := ee
+//                    || origin_floor(user) := call_floor
+//                    || destination_floor(user) := dest_floor
+//                END
             END
         END;
 
     ctrl_open_door(ee, ff) =
         PRE
-            ee: ELEVATOR & ff: FLOOR
+            ee: ELEVATOR
+            & ff: FLOOR
             & internal_door_state(ee) = CLOSED
             & floor_door_state(ff, ee) = CLOSED
             & current_floor(ee) = ff               //o elevador esta no piso daquele andar
-            & elevator_floor_order(ee) /= []
-            & first(elevator_floor_order(ee)) = ff //a proxima parada eh naquele andar
+            & elevator_stops(ee, elevator_direction(ee)) /= {} //existe uma parada pendente na direcao atual
+            & ff: elevator_stops(ee, elevator_direction(ee))   //o andar esta na lista de paradas da direcao atual
+            & !ft.(ft: FLOOR & elevator_direction(ee) = UP & ft: elevator_stops(ee, UP) & ft /= ff => ff < ft)     //a proxima (menor) parada na subida eh naquele andar
+            & !ft.(ft: FLOOR & elevator_direction(ee) = DOWN & ft: elevator_stops(ee, DOWN) & ft /= ff => ff > ft) //a proxima (maior) parada na descida eh naquele andar
         THEN
             elev_open_door(ee, ff)
         END;
