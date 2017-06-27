@@ -10,20 +10,24 @@ REFINES
     IdChecker
 
 SEES
-    People_ctx, Elevator_ctx, IdChecker_ctx
+    People_ctx, Elevator_ctx, IdChecker_ctx, OperationResult_ctx
     
 CONCRETE_VARIABLES
-    authorized_floors_i
+    authorized_floors_i,
+    authorized_floors_num_i
 
 INVARIANT
     authorized_floors_i: (PEOPLE*FLOOR) --> BOOL
-    & !pp.(pp:dom(authorized_floors) => authorized_floors(pp) = ran({pp} <| dom(authorized_floors_i |> {TRUE})))
+    & authorized_floors_num_i: PEOPLE --> NAT
+    & !pp.(pp:dom(authorized_floors) => authorized_floors(pp) = ran({pp} <| dom(authorized_floors_i |> {TRUE})))    
+    & !pp.(pp:PEOPLE => authorized_floors_num_i(pp) = card(authorized_floors(pp)))
 
 INITIALISATION
     BEGIN
         VAR pp IN
             pp := 0;
-            WHILE pp < PEOPLE_LIMIT DO
+            WHILE pp <= PEOPLE_LIMIT DO
+                authorized_floors_num_i(pp) := 0;
                 VAR ff IN
                     ff := GROUND_FLOOR;
                     WHILE ff < TOP_FLOOR DO
@@ -34,7 +38,7 @@ INITIALISATION
                     END 
                 END;
                 pp := pp + 1
-            INVARIANT pp < PEOPLE_LIMIT
+            INVARIANT pp <= PEOPLE_LIMIT
             VARIANT PEOPLE_LIMIT - pp
             END
         END
@@ -42,54 +46,102 @@ INITIALISATION
 
 OPERATIONS
     
-    res <-- idchecker_check_floor_authorization(uu, ff) =
+    auth, res <-- idchecker_check_floor_authorization(uu, ff) =
         BEGIN
-            //uu: PEOPLE & ff: FLOOR
-            //& uu: dom(authorized_floors)
-
-            VAR aa IN
-                aa := authorized_floors_i(uu, ff);
-                IF aa = TRUE
-                THEN
-                    res := AUTHORIZED
-                ELSE
-                    res := NOT_AUTHORIZED
-                END
+            IF
+                uu >= 0 & uu <= PEOPLE_LIMIT
+                & ff >= GROUND_FLOOR & ff <= TOP_FLOOR
+//                & uu: dom(authorized_floors)
+            THEN
+                VAR aa IN
+                    aa := authorized_floors_i(uu, ff);
+                    IF aa = TRUE
+                    THEN
+                        auth := AUTHORIZED
+                    ELSE
+                        auth := NOT_AUTHORIZED
+                    END
+                END;
+                res := SUCCESS
+            ELSE
+                auth := NOT_AUTHORIZED;
+                res := ERROR
             END
         END;
 
-    idchecker_authorize_floor(uu, ff) =
+    res <-- idchecker_authorize_floor(uu, ff) =
         BEGIN
-            //uu: PEOPLE & ff: FLOOR
-            //& uu: dom(authorized_floors)
-            //& ff /: authorized_floors(uu)
-            
-            authorized_floors_i(uu, ff) := TRUE
-        END;
-
-    idchecker_revoke_floor(uu, ff) =
-        BEGIN
-            //uu: PEOPLE & ff: FLOOR
-            //& uu: dom(authorized_floors)
-            //& ff: authorized_floors(uu)
-
-            authorized_floors_i(uu, ff) := FALSE
-        END;
-
-    idchecker_revoke_all(uu) =
-        BEGIN
-            //uu: PEOPLE
-            //& uu: dom(authorized_floors)
-            //& authorized_floors(uu) /= {}
-
-            VAR ff IN
-                ff := GROUND_FLOOR;
-                WHILE ff < TOP_FLOOR DO
-                    authorized_floors_i(uu, ff) := FALSE;
-                    ff := ff + 1
-                INVARIANT ff < card(FLOOR)
-                VARIANT card(FLOOR) - ff
+            IF
+                uu >= 0 & uu <= PEOPLE_LIMIT
+                & ff >= GROUND_FLOOR & ff <= TOP_FLOOR
+                //& uu: dom(authorized_floors)
+            THEN
+                VAR aa IN
+                    aa := authorized_floors_i(uu, ff);
+                    IF aa = FALSE
+                    THEN
+                        authorized_floors_i(uu, ff) := TRUE;
+//                        authorized_floors_num_i(uu) := authorized_floors_num_i(uu) + 1;
+                        res := SUCCESS
+                    ELSE
+                        res := ERROR
+                    END
                 END
+            ELSE
+                res := ERROR
+            END
+        END;
+
+    res <-- idchecker_revoke_floor(uu, ff) =
+        BEGIN
+            IF
+                uu >= 0 & uu <= PEOPLE_LIMIT
+                & ff >= GROUND_FLOOR & ff <= TOP_FLOOR
+                //& uu: dom(authorized_floors)
+            THEN
+                VAR aa IN
+                    aa := authorized_floors_i(uu, ff);
+                    IF aa = TRUE
+                    THEN
+                        authorized_floors_i(uu, ff) := FALSE;
+//                        authorized_floors_num_i(uu) := authorized_floors_num_i(uu) - 1;
+                        res := SUCCESS
+                    ELSE
+                        res := ERROR
+                    END
+                END
+            ELSE
+                res := ERROR
+            END
+        END;
+
+    res <-- idchecker_revoke_all(uu) =
+        BEGIN
+            IF
+                uu >= 0 & uu <= PEOPLE_LIMIT
+                //& uu: dom(authorized_floors)
+            THEN
+//                VAR aa_num IN
+//                    aa_num := authorized_floors_num_i(uu);
+//                    IF aa_num > 0
+//                    THEN
+                        VAR ff IN
+                            ff := GROUND_FLOOR;
+                            WHILE ff < TOP_FLOOR DO
+                                authorized_floors_i(uu, ff) := FALSE;
+                                ff := ff + 1
+                            INVARIANT ff < card(FLOOR)
+                            VARIANT card(FLOOR) - ff
+                            END
+                        END;
+//                        authorized_floors_num_i(uu) := 0;
+                        res := SUCCESS
+//                    ELSE
+//                        res := ERROR
+//                    END
+//                END
+            ELSE
+                res := ERROR
             END
         END
 

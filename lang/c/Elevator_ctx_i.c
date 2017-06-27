@@ -5,6 +5,7 @@
 /* Clause CONCRETE_CONSTANTS */
 /* Basic constants */
 
+#define Elevator_ctx__ELEVATOR_LIMIT 2
 #define Elevator_ctx__GROUND_FLOOR 0
 #define Elevator_ctx__TOP_FLOOR 4
 #define Elevator_ctx__WEIGHT_LIMIT 20

@@ -36,12 +36,14 @@ typedef enum
 
 /* Clause CONCRETE_CONSTANTS */
 /* Basic constants */
-#define Elevator_ctx__ELEVATOR 02
-#define Elevator_ctx__FLOOR 04
+#define Elevator_ctx__ELEVATOR 0Elevator_ctx__ELEVATOR_LIMIT
+#define Elevator_ctx__ELEVATOR_LIMIT 2
+#define Elevator_ctx__FLOOR Elevator_ctx__GROUND_FLOORElevator_ctx__TOP_FLOOR
 #define Elevator_ctx__GROUND_FLOOR 0
 #define Elevator_ctx__TOP_FLOOR 4
 #define Elevator_ctx__WEIGHT_LIMIT 20
 /* Array and record constants */
+
 
 
 

@@ -15,7 +15,7 @@ extern "C" {
 
 /* Clause CONCRETE_CONSTANTS */
 /* Basic constants */
-#define People_ctx__PEOPLE 04
+#define People_ctx__PEOPLE 0People_ctx__PEOPLE_LIMIT
 #define People_ctx__PEOPLE_LIMIT 4
 /* Array and record constants */
 

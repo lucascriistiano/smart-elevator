@@ -10,20 +10,18 @@ SETS
    
 CONSTANTS
     ELEVATOR,
+    ELEVATOR_LIMIT,
     FLOOR,
     GROUND_FLOOR,
     TOP_FLOOR,
     WEIGHT_LIMIT
     
 PROPERTIES
-    ELEVATOR = 0..2
-    & FLOOR = 0..4
+    ELEVATOR_LIMIT = 2
+    & ELEVATOR = 0..ELEVATOR_LIMIT
     & GROUND_FLOOR = 0
     & TOP_FLOOR = 4
+    & FLOOR = 0..TOP_FLOOR
     & WEIGHT_LIMIT: NAT1
-    & min(ELEVATOR) = 0
-    & max(ELEVATOR) = 2
-    & min(FLOOR) = 0
-    & max(FLOOR) = 4
 
 END

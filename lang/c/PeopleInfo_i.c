@@ -12,7 +12,7 @@
 /* Array and record constants */
 /* Clause CONCRETE_VARIABLES */
 
-static int32_t PeopleInfo__people_weight[5];
+static int32_t PeopleInfo__people_weight[People_ctx__PEOPLE_LIMIT+1];
 /* Clause INITIALISATION */
 void PeopleInfo__INITIALISATION(void)
 {
