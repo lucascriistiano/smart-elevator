@@ -8,36 +8,80 @@ MACHINE
     
 SEES
     Elevator_ctx, People_ctx
-
-INCLUDES
-    Elevator
-    
-PROMOTES
-    elev_go_up,
-    elev_go_down,
-    elev_current_floor
     
 EXTENDS
-    IdChecker
+    IdChecker, PeopleInfo
 
 VARIABLES
+    current_floor,
+    elevator_weight,
+    internal_door_state,
+    floor_door_state,
+    elevator_people,
+    elevator_direction,
+    elevator_state,
+    elevator_stops,
+    
     choosen_elevator,
     origin_floor,
     destination_floor
     
 INVARIANT
-    choosen_elevator: PEOPLE +-> ELEVATOR
+    current_floor: ELEVATOR --> FLOOR
+    & elevator_weight: ELEVATOR --> NAT
+    & internal_door_state: ELEVATOR --> DOOR_STATE
+    & floor_door_state: (FLOOR * ELEVATOR) --> DOOR_STATE
+    & elevator_people: ELEVATOR --> POW(PEOPLE)
+    & elevator_direction: ELEVATOR --> DIRECTION
+    & elevator_state: ELEVATOR --> STATE
+    & elevator_stops: (ELEVATOR * DIRECTION) --> POW(FLOOR)
+    & !ee.(ee: ELEVATOR => (internal_door_state(ee) = CLOSED => elevator_weight(ee) <= WEIGHT_LIMIT))
+    & !(ee).(ee: ELEVATOR => elevator_weight(ee) = SIGMA uu.(uu: elevator_people(ee) | people_weight(uu)))
+    & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (floor_door_state(ff, ee) = OPEN => current_floor(ee) = ff))
+    & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (ff = current_floor(ee) => (floor_door_state(ff, ee) = internal_door_state(ee))))
+    
+    & choosen_elevator: PEOPLE +-> ELEVATOR
     & origin_floor: PEOPLE +-> FLOOR
     & destination_floor: PEOPLE +-> FLOOR
 
 INITIALISATION
-    choosen_elevator := {}
+    current_floor := ELEVATOR * { GROUND_FLOOR }
+    || elevator_weight := ELEVATOR * { 0 }
+    || internal_door_state := ELEVATOR * { CLOSED }
+    || floor_door_state := (FLOOR * ELEVATOR) * { CLOSED }
+    || elevator_people := ELEVATOR * { {} }
+    || elevator_direction := ELEVATOR * { UP }
+    || elevator_state := ELEVATOR * { STOPPED }
+    || elevator_stops := (ELEVATOR * DIRECTION) * { {} }
+    
+    || choosen_elevator := {}
     || origin_floor := {}
     || destination_floor := {}
     
 OPERATIONS
+    
+    ff <-- elev_current_floor(ee) =
+        PRE
+            ee: ELEVATOR
+        THEN
+            ff := current_floor(ee)
+        END;
+        
+    ww <-- elev_current_weight(ee) =
+        PRE
+            ee: ELEVATOR
+        THEN
+            ww := elevator_weight(ee)
+        END;
+        
+    ss <-- elev_door_state(ee) =
+        PRE
+            ee: ELEVATOR
+        THEN
+            ss := internal_door_state(ee)
+        END;
 
-    elnum <-- ctrl_call_elevator(call_floor, dest_floor, user) =
+    elnum <-- elev_call_elevator(call_floor, dest_floor, user) =
         PRE 
             call_floor: FLOOR & dest_floor: FLOOR & user: PEOPLE
             & call_floor /= dest_floor
@@ -56,27 +100,21 @@ OPERATIONS
                 THEN
                     ANY ee WHERE ee: ELEVATOR & elevator_direction(ee) = UP & elevator_weight(ee) + people_weight(user) <= WEIGHT_LIMIT
                     THEN
-                        elev_add_call_stops(ee, call_floor, dest_floor)
+                        elevator_stops(ee, UP) := elevator_stops(ee, UP) \/ { call_floor, dest_floor }
                         || choosen_elevator(user) := ee
                         || origin_floor(user) := call_floor
                         || destination_floor(user) := dest_floor
                         || elnum := ee
                     END
 //                ELSE
-                    
+                    //retorna um elevador qualquer mais proximo que aceite o peso do usuario
                 END
 //            ELSE
-//                ANY ee WHERE ee: ELEVATOR & (ee = 2 or ee = 3)
-//                THEN
-//                    elnum <-- elev_call_elevator(ee, call_floor, dest_floor)
-//                    || choosen_elevator(user) := ee
-//                    || origin_floor(user) := call_floor
-//                    || destination_floor(user) := dest_floor
-//                END
+                   //coisa semelhante para down
             END
         END;
 
-    ctrl_open_door(ee, ff) =
+    elev_open_door(ee, ff) =
         PRE
             ee: ELEVATOR
             & ff: FLOOR
@@ -88,10 +126,12 @@ OPERATIONS
             & !ft.(ft: FLOOR & elevator_direction(ee) = UP & ft: elevator_stops(ee, UP) & ft /= ff => ff < ft)     //a proxima (menor) parada na subida eh naquele andar
             & !ft.(ft: FLOOR & elevator_direction(ee) = DOWN & ft: elevator_stops(ee, DOWN) & ft /= ff => ff > ft) //a proxima (maior) parada na descida eh naquele andar
         THEN
-            elev_open_door(ee, ff)
+            internal_door_state(ee) := OPEN
+            || floor_door_state(ff, ee) := OPEN
+            || elevator_stops(ee, elevator_direction(ee)) := elevator_stops(ee, elevator_direction(ee)) - { min(elevator_stops(ee, elevator_direction(ee))) }
         END;
 
-     ctrl_close_door(ee, ff) =
+     elev_close_door(ee, ff) =
         PRE
             ee: ELEVATOR & ff: FLOOR
             & internal_door_state(ee) = OPEN
@@ -101,25 +141,28 @@ OPERATIONS
             & !uu.(uu: elevator_people(ee) => destination_floor(uu) /= ff) //nao tem mais ninguem para descer no andar
             & !uu.(uu: dom(choosen_elevator) => ((choosen_elevator(uu) = ee & origin_floor(uu) = current_floor(ee)) => uu: elevator_people(ee))) //nao tem mais ninguem para entrar no elevador no andar
         THEN
-            elev_close_door(ee, ff)
+            internal_door_state(ee) := CLOSED
+            || floor_door_state(ff, ee) := CLOSED
         END;
 
-    ctrl_elev_enter(ee, uu) =
+    elev_enter(ee, uu) =
         PRE
             ee: ELEVATOR & uu: PEOPLE
             & internal_door_state(ee) = OPEN
             & uu /: elevator_people(ee)
+//            & (elevator_weight(ee) + people_weight(uu)) <= WEIGHT_LIMIT
             & uu: dom(choosen_elevator)
             & choosen_elevator(uu) = ee //eh o elevador que foi escolhido para o usuario
             & uu: dom(origin_floor)
             & origin_floor(uu) = current_floor(ee) //esta no andar do usuario
         THEN
-            elev_enter(ee, uu)
+            elevator_people(ee) := elevator_people(ee) \/ { uu }
+            || elevator_weight(ee) := elevator_weight(ee) + people_weight(uu)
             || choosen_elevator := { uu } <<| choosen_elevator //remove elevador escolhido para o usuario
             || origin_floor := { uu } <<| origin_floor
         END;
 
-    ctrl_elev_exit(ee, uu) =
+    elev_exit(ee, uu) =
         PRE
             ee: ELEVATOR & uu: PEOPLE
             & internal_door_state(ee) = OPEN
@@ -127,8 +170,56 @@ OPERATIONS
             & uu: dom(destination_floor)
             & current_floor(ee) = destination_floor(uu) //eh o andar que o usuario deve descer
         THEN
-            elev_exit(ee, uu)
+            elevator_people(ee) := elevator_people(ee) - { uu }
+            || elevator_weight(ee) := elevator_weight(ee) - people_weight(uu)
             || destination_floor := { uu } <<| destination_floor //remove andar destino do usuario
+        END;
+
+    elev_go_up(ee) =
+        PRE
+            ee: ELEVATOR
+            & elevator_stops(ee, elevator_direction(ee)) /= {}  //alguem chamou o elevador
+            & elevator_direction(ee) = UP
+            & min(elevator_stops(ee, UP)) > current_floor(ee) //a proxima parada eh acima do andar atual
+            & current_floor(ee) < TOP_FLOOR
+            & internal_door_state(ee) = CLOSED
+            & floor_door_state(current_floor(ee), ee) = CLOSED
+        THEN
+            current_floor(ee) := current_floor(ee) + 1
+        END;
+
+    elev_go_down(ee) =
+        PRE
+            ee: ELEVATOR
+            & elevator_stops(ee, elevator_direction(ee)) /= {}  //alguem chamou o elevador
+            & elevator_direction(ee) = DOWN
+            & max(elevator_stops(ee, DOWN)) < current_floor(ee) //a proxima parada eh abaixo do andar atual
+            & current_floor(ee) > GROUND_FLOOR
+            & internal_door_state(ee) = CLOSED
+            & floor_door_state(current_floor(ee), ee) = CLOSED
+        THEN
+            current_floor(ee) := current_floor(ee) - 1
+        END;
+        
+    dir <-- elev_query_direction(ee) =
+        PRE
+            ee: ELEVATOR
+        THEN
+            dir := elevator_direction(ee)
+        END;
+
+    dir <-- elev_calc_direction(orig_floor, dest_floor) =
+        PRE
+            orig_floor: FLOOR & dest_floor: FLOOR
+            & orig_floor /= dest_floor
+        THEN
+            IF
+                orig_floor < dest_floor
+            THEN
+                dir := UP
+            ELSE
+                dir := DOWN
+            END
         END
 
 END
