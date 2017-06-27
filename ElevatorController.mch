@@ -81,6 +81,13 @@ OPERATIONS
             ss := internal_door_state(ee)
         END;
 
+    dir <-- elev_direction(ee) =
+        PRE
+            ee: ELEVATOR
+        THEN
+            dir := elevator_direction(ee)
+        END;
+
     elnum <-- elev_call_elevator(call_floor, dest_floor, user) =
         PRE 
             call_floor: FLOOR & dest_floor: FLOOR & user: PEOPLE
@@ -199,27 +206,6 @@ OPERATIONS
             & floor_door_state(current_floor(ee), ee) = CLOSED
         THEN
             current_floor(ee) := current_floor(ee) - 1
-        END;
-        
-    dir <-- elev_query_direction(ee) =
-        PRE
-            ee: ELEVATOR
-        THEN
-            dir := elevator_direction(ee)
-        END;
-
-    dir <-- elev_calc_direction(orig_floor, dest_floor) =
-        PRE
-            orig_floor: FLOOR & dest_floor: FLOOR
-            & orig_floor /= dest_floor
-        THEN
-            IF
-                orig_floor < dest_floor
-            THEN
-                dir := UP
-            ELSE
-                dir := DOWN
-            END
         END
 
 END
