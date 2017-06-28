@@ -21,7 +21,6 @@ VARIABLES
     elevator_direction,
     elevator_state,
     elevator_stops,
-    
     choosen_elevator,
     origin_floor,
     destination_floor
@@ -35,6 +34,9 @@ INVARIANT
     & elevator_direction: ELEVATOR --> DIRECTION
     & elevator_state: ELEVATOR --> STATE
     & elevator_stops: (ELEVATOR * DIRECTION) --> POW(FLOOR)
+    & choosen_elevator: PEOPLE +-> ELEVATOR
+    & origin_floor: PEOPLE +-> FLOOR
+    & destination_floor: PEOPLE +-> FLOOR
     & !ee.(ee: ELEVATOR => (internal_door_state(ee) = CLOSED => elevator_weight(ee) <= WEIGHT_LIMIT))
     & !(ee).(ee: ELEVATOR => elevator_weight(ee) = SIGMA uu.(uu: elevator_people(ee) | people_weight(uu)))
     & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (floor_door_state(ff, ee) = OPEN => current_floor(ee) = ff))
@@ -42,9 +44,6 @@ INVARIANT
     & !ee.(ee: ELEVATOR & card(elevator_stops(ee, UP) \/ elevator_stops(ee, DOWN)) = 0 => elevator_state(ee) = FREE)      //se nao tiver nenhuma parada esta livre
     & !ee.(ee: ELEVATOR & card(elevator_stops(ee, UP) \/ elevator_stops(ee, DOWN)) > 0 => elevator_state(ee) = ATTENDING) //se tiver alguma parada esta atendendo
     
-    & choosen_elevator: PEOPLE +-> ELEVATOR
-    & origin_floor: PEOPLE +-> FLOOR
-    & destination_floor: PEOPLE +-> FLOOR
 
 INITIALISATION
     current_floor := ELEVATOR * { GROUND_FLOOR }
@@ -55,7 +54,6 @@ INITIALISATION
     || elevator_direction := ELEVATOR * { UP }
     || elevator_state := ELEVATOR * { FREE }
     || elevator_stops := (ELEVATOR * DIRECTION) * { {} }
-    
     || choosen_elevator := {}
     || origin_floor := {}
     || destination_floor := {}
@@ -148,16 +146,34 @@ OPERATIONS
                 & user /: dom(destination_floor)
             THEN
                 //TODO Decidir melhor elevador para chamar para o usuario
-                // Melhor = (que esteja indo na mesma direcao que a pessoa vai, que chegue ou passe por onde a pessoa vai, que nao ultrapasse o peso com quem esta e com quem vai entrar antes dele)
-                // So pode entrar quem ja chamou o elevador naquele andar e foi direcionado para ele
-
-                //Lista contem onde tem que parar para pegar e deixar as pessoas
+                // Melhor = que esteja indo na mesma direcao
+                //          que nao ultrapasse o peso com quem esta e com quem vai entrar e sair antes dele
+                //          se nenhum atender, outro que esteja mais proximo no sentido oposto
 
                 IF call_floor < dest_floor
                 THEN
-                    IF bool(#ee.(ee: ELEVATOR & elevator_direction(ee) = UP & elevator_weight(ee) + people_weight(user) <= WEIGHT_LIMIT)) = TRUE
+                    //usuario indo para cima
+                    IF bool(#ee.(
+                            ee: ELEVATOR
+                            & elevator_direction(ee) = UP
+                            & current_floor(ee) <= call_floor
+                            //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
+                            & (elevator_weight(ee)
+                                + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) <= call_floor | people_weight(uu))
+                                - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) <= call_floor | people_weight(uu)))
+                                    <= WEIGHT_LIMIT)) = TRUE
                     THEN
-                        ANY ee WHERE ee: ELEVATOR & elevator_direction(ee) = UP & elevator_weight(ee) + people_weight(user) <= WEIGHT_LIMIT
+                        //existe um elevador otimizado para subir
+                        ANY ee
+                        WHERE
+                            ee: ELEVATOR
+                            & elevator_direction(ee) = UP
+                            & current_floor(ee) <= call_floor
+                            //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
+                            & (elevator_weight(ee)
+                                + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) <= call_floor | people_weight(uu))
+                                - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) <= call_floor | people_weight(uu)))
+                                    <= WEIGHT_LIMIT
                         THEN
                             elevator_stops(ee, UP) := elevator_stops(ee, UP) \/ { call_floor, dest_floor }
                             || choosen_elevator(user) := ee
@@ -168,13 +184,52 @@ OPERATIONS
                             || res := SUCCESS
                         END
                     ELSE
-                        skip //retorna um elevador qualquer mais proximo que aceite o peso do usuario
+                        //nao existe um elevador otimizado para subir
+                        elnum := 0
+                        || res := ERROR
                     END
                 ELSE
-                    skip //coisa semelhante para down
+                    //usuario indo para baixo
+                    IF bool(#ee.(
+                            ee: ELEVATOR
+                            & elevator_direction(ee) = DOWN
+                            & current_floor(ee) >= call_floor
+                            //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
+                            & (elevator_weight(ee)
+                                + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) >= call_floor | people_weight(uu))
+                                - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) >= call_floor | people_weight(uu)))
+                                    <= WEIGHT_LIMIT)) = TRUE
+                    THEN
+                        //existe um elevador otimizado para descer
+                        ANY ee
+                        WHERE
+                            ee: ELEVATOR
+                            & elevator_direction(ee) = DOWN
+                            & current_floor(ee) >= call_floor
+                            //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
+                            & (elevator_weight(ee)
+                                + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) >= call_floor | people_weight(uu))
+                                - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) >= call_floor | people_weight(uu)))
+                                    <= WEIGHT_LIMIT
+                        THEN
+                            elevator_stops(ee, DOWN) := elevator_stops(ee, DOWN) \/ { call_floor, dest_floor }
+                            || choosen_elevator(user) := ee
+                            || origin_floor(user) := call_floor
+                            || destination_floor(user) := dest_floor
+                            || elnum := ee
+                            || elevator_state(ee) := ATTENDING
+                            || res := SUCCESS
+                        END
+                    ELSE
+                        //nao existe um elevador otimizado para descer
+                        elnum := 0
+                        || res := ERROR
+                    END
                 END
             ELSE
-                res := ERROR
+                //nao atende ifs da precondicao
+                elnum := 0
+                || res := ERROR
             END
         END;
 
@@ -252,12 +307,13 @@ OPERATIONS
         END;
 
     res <-- elev_enter(ee, uu) =
+        //somente pode entrar quem ja chamou o elevador naquele andar e foi direcionado para ele
         PRE
             ee: ELEVATOR & uu: PEOPLE
             & internal_door_state(ee) = OPEN                  //a porta interna esta aberta
             & floor_door_state(current_floor(ee), ee) = OPEN  //a porta externa esta aberta
             & uu /: elevator_people(ee)                       //o usuario nao esta dentro do elevador
-//            & (elevator_weight(ee) + people_weight(uu)) <= WEIGHT_LIMIT   //peso nao vai ser excedido com o peso do usuario
+            & (elevator_weight(ee) + people_weight(uu)) <= WEIGHT_LIMIT   //peso nao vai ser excedido com o peso do usuario //TODO Check
             & uu: dom(choosen_elevator)                       //o usuario possui um elevador de entrada cadastrado
             & choosen_elevator(uu) = ee                       //eh o elevador que foi escolhido para o usuario
             & uu: dom(origin_floor)                           //o usuario possui um piso de entrada cadastrado
@@ -268,7 +324,7 @@ OPERATIONS
                 & internal_door_state(ee) = OPEN
                 & floor_door_state(current_floor(ee), ee) = OPEN
                 & uu /: elevator_people(ee)
-    //            & (elevator_weight(ee) + people_weight(uu)) <= WEIGHT_LIMIT
+                & (elevator_weight(ee) + people_weight(uu)) <= WEIGHT_LIMIT  //TODO Check
                 & uu: dom(choosen_elevator)
                 & choosen_elevator(uu) = ee
                 & uu: dom(origin_floor)
