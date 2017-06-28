@@ -130,9 +130,9 @@ OPERATIONS
             END
         END;
 
-    elnum, res <-- elev_call_elevator(call_floor, dest_floor, user) =
+    elnum, res <-- elev_call_elevator(user, call_floor, dest_floor) =
         PRE 
-            call_floor: FLOOR & dest_floor: FLOOR & user: PEOPLE
+            user: PEOPLE & call_floor: FLOOR & dest_floor: FLOOR
             & call_floor /= dest_floor              //pisos de origem e destino sao diferentes
             & dest_floor: authorized_floors(user)   //o usuario tem permissao para ir para o piso selecionado
             & user /: dom(choosen_elevator)         //o usuario nao ja chamou elevador
@@ -158,7 +158,8 @@ OPERATIONS
                             & elevator_floor_sequence(ee) /= {}
                             & current_floor(ee) < first(elevator_floor_sequence(ee)) //elevador esta subindo
                             & call_floor >= current_floor(ee)
-                            & dest_floor <= first(elevator_floor_sequence(ee))
+//                            & dest_floor <= first(elevator_floor_sequence(ee))
+                            & dest_floor <= last(elevator_floor_sequence(ee))
                             //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
                             & (elevator_weight(ee)
                                 + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) <= call_floor | people_weight(uu))
@@ -172,7 +173,8 @@ OPERATIONS
                             & elevator_floor_sequence(ee) /= {}
                             & current_floor(ee) < first(elevator_floor_sequence(ee)) //elevador esta subindo
                             & call_floor >= current_floor(ee)
-                            & dest_floor <= first(elevator_floor_sequence(ee))
+//                            & dest_floor <= first(elevator_floor_sequence(ee))
+                            & dest_floor <= last(elevator_floor_sequence(ee))
                             //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
                             & (elevator_weight(ee)
                                 + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) <= call_floor | people_weight(uu))
@@ -188,29 +190,14 @@ OPERATIONS
 
                     ELSIF bool(#ee.(
                                ee: ELEVATOR
-                               //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
-                               & (elevator_weight(ee)
-                                   + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) <= call_floor | people_weight(uu))
-                                   - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) <= call_floor | people_weight(uu)))
-                                       <= WEIGHT_LIMIT)) = TRUE
+                               & elevator_floor_sequence(ee) = {})) = TRUE
                     THEN
-                        //existe um elevador com capacidade suficiente livre para subir
+                        //existe um elevador livre
                         ANY ee
                         WHERE
                             ee: ELEVATOR
-                           //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
-                           & (elevator_weight(ee)
-                               + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) <= call_floor | people_weight(uu))
-                               - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) <= call_floor | people_weight(uu)))
-                                   <= WEIGHT_LIMIT
+                            & elevator_floor_sequence(ee) = {}
                         THEN
-//                            IF call_floor /= last(elevator_floor_sequence(ee))
-//                            THEN
-//                                elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
-//                            ELSIF dest_floor /= last(elevator_floor_sequence(ee))
-//                            THEN
-//                                elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ dest_floor ]
-//                            END
                             elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
                             || choosen_elevator(user) := ee
                             || origin_floor(user) := call_floor
@@ -231,7 +218,8 @@ OPERATIONS
                             & elevator_floor_sequence(ee) /= {}
                             & current_floor(ee) > first(elevator_floor_sequence(ee)) //elevador esta descendo
                             & call_floor <= current_floor(ee)
-                            & dest_floor >= first(elevator_floor_sequence(ee))
+//                            & dest_floor >= first(elevator_floor_sequence(ee))
+                            & dest_floor >= last(elevator_floor_sequence(ee))
                             //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
                             & (elevator_weight(ee)
                                 + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) >= call_floor | people_weight(uu))
@@ -245,7 +233,8 @@ OPERATIONS
                             & elevator_floor_sequence(ee) /= {}
                             & current_floor(ee) > first(elevator_floor_sequence(ee)) //elevador esta descendo
                             & call_floor <= current_floor(ee)
-                            & dest_floor >= first(elevator_floor_sequence(ee))
+//                            & dest_floor >= first(elevator_floor_sequence(ee))
+                            & dest_floor >= last(elevator_floor_sequence(ee))
                             //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
                             & (elevator_weight(ee)
                                 + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) >= call_floor | people_weight(uu))
@@ -259,23 +248,15 @@ OPERATIONS
                             || res := SUCCESS
                         END
 
-                     ELSIF bool(#ee.(
+                    ELSIF bool(#ee.(
                                ee: ELEVATOR
-                               //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
-                               & (elevator_weight(ee)
-                                   + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) >= call_floor | people_weight(uu))
-                                   - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) >= call_floor | people_weight(uu)))
-                                       <= WEIGHT_LIMIT)) = TRUE
+                               & elevator_floor_sequence(ee) /= {})) = TRUE
                     THEN
-                        //existe um elevador com capacidade suficiente livre para descer
+                        //existe um elevador livre
                         ANY ee
                         WHERE
                             ee: ELEVATOR
-                           //peso atual + soma do peso de quem vai entrar antes ou no piso - soma do peso de quem vai sair antes ou no piso
-                           & (elevator_weight(ee)
-                               + SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & origin_floor(uu) >= call_floor | people_weight(uu))
-                               - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) >= call_floor | people_weight(uu)))
-                                   <= WEIGHT_LIMIT
+                            & elevator_floor_sequence(ee) /= {}
                         THEN
                             elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
                             || choosen_elevator(user) := ee
@@ -361,10 +342,10 @@ OPERATIONS
             END
         END;
 
-    res <-- elev_enter(ee, uu) =
+    res <-- elev_enter(uu, ee) =
         //somente pode entrar quem ja chamou o elevador naquele andar e foi direcionado para ele
         PRE
-            ee: ELEVATOR & uu: PEOPLE
+            uu: PEOPLE & ee: ELEVATOR
             & internal_door_state(ee) = OPEN                  //a porta interna esta aberta
             & floor_door_state(current_floor(ee), ee) = OPEN  //a porta externa esta aberta
             & uu /: elevator_people(ee)                       //o usuario nao esta dentro do elevador
@@ -395,9 +376,9 @@ OPERATIONS
             END
         END;
 
-    res <-- elev_exit(ee, uu) =
+    res <-- elev_exit(uu, ee) =
         PRE
-            ee: ELEVATOR & uu: PEOPLE
+            uu: PEOPLE & ee: ELEVATOR
             & internal_door_state(ee) = OPEN                  //a porta interna esta aberta
             & floor_door_state(current_floor(ee), ee) = OPEN  //a porta externa esta aberta
             & uu: elevator_people(ee)                         //o usuario esta dentro do elevador
