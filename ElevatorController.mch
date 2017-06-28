@@ -9,8 +9,12 @@ MACHINE
 SEES
     Elevator_ctx, People_ctx, OperationResult_ctx
     
-EXTENDS
+INCLUDES
     IdChecker, PeopleInfo
+    
+PROMOTES
+    idchecker_check_floor_authorization,
+    peopleinfo_query_weight
 
 VARIABLES
     current_floor,
@@ -18,7 +22,6 @@ VARIABLES
     internal_door_state,
     floor_door_state,
     elevator_people,
-    elevator_stops,
     choosen_elevator,
     origin_floor,
     destination_floor,
@@ -30,7 +33,6 @@ INVARIANT
     & internal_door_state: ELEVATOR --> DOOR_STATE
     & floor_door_state: (FLOOR * ELEVATOR) --> DOOR_STATE
     & elevator_people: ELEVATOR --> POW(PEOPLE)
-    & elevator_stops: (ELEVATOR * DIRECTION) --> POW(FLOOR)
     & choosen_elevator: PEOPLE +-> ELEVATOR
     & origin_floor: PEOPLE +-> FLOOR
     & destination_floor: PEOPLE +-> FLOOR
@@ -39,6 +41,8 @@ INVARIANT
     & !(ee).(ee: ELEVATOR => elevator_weight(ee) = SIGMA uu.(uu: elevator_people(ee) | people_weight(uu)))
     & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (floor_door_state(ff, ee) = OPEN => current_floor(ee) = ff))
     & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (ff = current_floor(ee) => (floor_door_state(ff, ee) = internal_door_state(ee))))
+    & !uu.(uu: PEOPLE & uu: dom(destination_floor) => (destination_floor(uu): authorized_floors(uu)))
+//    & !ee.((ee: ELEVATOR & elevator_floor_sequence(ee) /= {}) => card(elevator_people(ee)) = 0)
 
 INITIALISATION
     current_floor := ELEVATOR * { GROUND_FLOOR }
@@ -46,7 +50,6 @@ INITIALISATION
     || internal_door_state := ELEVATOR * { CLOSED }
     || floor_door_state := (FLOOR * ELEVATOR) * { CLOSED }
     || elevator_people := ELEVATOR * { {} }
-    || elevator_stops := (ELEVATOR * DIRECTION) * { {} }
     || choosen_elevator := {}
     || origin_floor := {}
     || destination_floor := {}
@@ -175,8 +178,7 @@ OPERATIONS
                                 - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) <= call_floor | people_weight(uu)))
                                     <= WEIGHT_LIMIT
                         THEN
-                            elevator_stops(ee, UP) := elevator_stops(ee, UP) \/ { call_floor, dest_floor }
-                            || choosen_elevator(user) := ee
+                            choosen_elevator(user) := ee
                             || origin_floor(user) := call_floor
                             || destination_floor(user) := dest_floor
                             || elnum := ee
@@ -202,7 +204,6 @@ OPERATIONS
                                    <= WEIGHT_LIMIT
                         THEN
                             elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
-                            || elevator_stops(ee, UP) := elevator_stops(ee, UP) \/ { call_floor, dest_floor }
                             || choosen_elevator(user) := ee
                             || origin_floor(user) := call_floor
                             || destination_floor(user) := dest_floor
@@ -243,8 +244,7 @@ OPERATIONS
                                 - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) >= call_floor | people_weight(uu)))
                                     <= WEIGHT_LIMIT
                         THEN
-                            elevator_stops(ee, DOWN) := elevator_stops(ee, DOWN) \/ { call_floor, dest_floor }
-                            || choosen_elevator(user) := ee
+                            choosen_elevator(user) := ee
                             || origin_floor(user) := call_floor
                             || destination_floor(user) := dest_floor
                             || elnum := ee
@@ -270,7 +270,6 @@ OPERATIONS
                                    <= WEIGHT_LIMIT
                         THEN
                             elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
-                            || elevator_stops(ee, DOWN) := elevator_stops(ee, DOWN) \/ { call_floor, dest_floor }
                             || choosen_elevator(user) := ee
                             || origin_floor(user) := call_floor
                             || destination_floor(user) := dest_floor
@@ -314,25 +313,9 @@ OPERATIONS
                 & (ff: ran(elevator_people(ee) <| destination_floor) //existe alguem para descer no andar
                     or
                    ff: ran(dom(choosen_elevator |> {ee}) <| origin_floor)) //existe alguem para subir no andar
-//                & (#uu.((uu: PEOPLE & uu: elevator_people(ee)) => (destination_floor(uu) = ff))
-//                   or #uu.((uu: PEOPLE & uu: elevator_people(ee)) => (choosen_elevator(uu) = ee & origin_floor(uu) = ff)))
             THEN
                 internal_door_state(ee) := OPEN
                 || floor_door_state(ff, ee) := OPEN
-                || IF current_floor(ee) > first(elevator_floor_sequence(ee))
-                   THEN
-                       elevator_stops(ee, DOWN) := elevator_stops(ee, DOWN) - { min(elevator_stops(ee, DOWN)) }
-                   ELSIF current_floor(ee) < first(elevator_floor_sequence(ee))
-                   THEN
-                       elevator_stops(ee, UP) := elevator_stops(ee, UP) - { min(elevator_stops(ee, UP)) }
-                   END
-
-//                || IF (card(elevator_stops(ee, UP)) + card(elevator_stops(ee, DOWN)) - 1) = 0 //se ao remover a parada atual ainda restar alguma parada pendente
-//                   THEN
-//                       elevator_state(ee) := FREE
-//                   ELSE
-//                       elevator_state(ee) := ATTENDING
-//                   END
                 || res := SUCCESS
             ELSE
                 res := ERROR
@@ -452,10 +435,12 @@ OPERATIONS
                 & current_floor(ee) /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
             THEN
                 current_floor(ee) := current_floor(ee) + 1
-//                || IF current_floor(ee) + 1 = first(elevator_floor_sequence(ee))  //TODO Check
-//                   THEN
-//                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
-//                   END
+                || IF current_floor(ee) + 1 /: ran(elevator_people(ee) <| destination_floor)
+                      & current_floor(ee) + 1 /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
+                      & current_floor(ee) + 1 = first(elevator_floor_sequence(ee))  //nao tem ninguem pra descer ou subir no andar seguinte, entao remove da lista
+                   THEN
+                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
+                   END
                 || res := SUCCESS
             ELSE
                 res := ERROR
@@ -484,14 +469,94 @@ OPERATIONS
                 & current_floor(ee) /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
             THEN
                 current_floor(ee) := current_floor(ee) - 1
-//                || IF current_floor(ee) - 1 = first(elevator_floor_sequence(ee))  //TODO Check
-//                   THEN
-//                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
-//                   END
+                || IF current_floor(ee) - 1 /: ran(elevator_people(ee) <| destination_floor)
+                      & current_floor(ee) - 1 /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
+                      & current_floor(ee) - 1 = first(elevator_floor_sequence(ee))  //nao tem ninguem pra descer ou subir no andar seguinte, entao remove da lista
+                   THEN
+                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
+                   END
                 || res := SUCCESS
             ELSE
                 res := ERROR
             END
+        END;
+    
+    res <-- peopleinfo_set_weight_roubust(uu, ww) =
+        PRE
+            uu: PEOPLE & ww: NAT1
+            & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+        THEN
+            IF
+                uu: PEOPLE & ww > 0
+                & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+            THEN
+                res <-- peopleinfo_set_weight(uu, ww)
+            ELSE
+                res := ERROR
+            END
+        END;
+        
+    res <-- idchecker_authorize_floor_robust(uu, ff) =
+        PRE
+            uu: PEOPLE & ff: FLOOR
+            & ff /: authorized_floors(uu)
+            & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+            & uu /: dom(origin_floor)
+            & uu /: dom(destination_floor)
+        THEN
+            IF
+                uu: PEOPLE & ff: FLOOR 
+                & ff /: authorized_floors(uu)
+                & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+                & uu /: dom(origin_floor)
+                & uu /: dom(destination_floor)
+            THEN
+                res <-- idchecker_authorize_floor(uu, ff)
+            ELSE
+                res := ERROR
+            END
+        END;
+        
+    res <-- idchecker_revoke_floor_robust(uu, ff) =
+        PRE
+            uu: PEOPLE & ff: FLOOR
+            & ff: authorized_floors(uu)
+            & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+            & uu /: dom(origin_floor)
+            & uu /: dom(destination_floor)
+        THEN
+            IF
+                uu: PEOPLE & ff: FLOOR
+                & ff: authorized_floors(uu)
+                & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+                & uu /: dom(origin_floor)
+                & uu /: dom(destination_floor)
+            THEN
+                res <-- idchecker_revoke_floor(uu, ff)
+            ELSE
+                res := ERROR
+            END
+        END;
+
+    res <-- idchecker_revoke_all_robust(uu) =
+        PRE
+            uu: PEOPLE
+            & authorized_floors(uu) /= {}
+            & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+            & uu /: dom(origin_floor)
+            & uu /: dom(destination_floor)
+        THEN
+            IF
+                uu: PEOPLE
+                & authorized_floors(uu) /= {}
+                & !ee.(ee:ELEVATOR => uu /: elevator_people(ee))
+                & uu /: dom(origin_floor)
+                & uu /: dom(destination_floor)
+            THEN
+                res <-- idchecker_revoke_all(uu)
+            ELSE
+                res := ERROR
+            END    
         END
 
 END

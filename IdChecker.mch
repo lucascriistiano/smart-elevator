@@ -23,11 +23,9 @@ OPERATIONS
     auth, res <-- idchecker_check_floor_authorization(uu, ff) =
         PRE
             uu: PEOPLE & ff: FLOOR
-//            & uu: dom(authorized_floors)
         THEN
             IF
                 uu: PEOPLE & ff: FLOOR 
-//                & uu: dom(authorized_floors)
             THEN
                 IF
                     ff: authorized_floors(uu)
@@ -46,12 +44,10 @@ OPERATIONS
     res <-- idchecker_authorize_floor(uu, ff) =
         PRE
             uu: PEOPLE & ff: FLOOR
-//            & uu: dom(authorized_floors)
             & ff /: authorized_floors(uu)
         THEN
             IF
                 uu: PEOPLE & ff: FLOOR 
-//                & uu: dom(authorized_floors)
                 & ff /: authorized_floors(uu)
             THEN
                 authorized_floors(uu) := authorized_floors(uu) \/ { ff }
@@ -64,12 +60,10 @@ OPERATIONS
     res <-- idchecker_revoke_floor(uu, ff) =
         PRE
             uu: PEOPLE & ff: FLOOR
-//            & uu: dom(authorized_floors)
             & ff: authorized_floors(uu)
         THEN
             IF
                 uu: PEOPLE & ff: FLOOR
-//                & uu: dom(authorized_floors)
                 & ff: authorized_floors(uu)
             THEN
                 authorized_floors(uu) := authorized_floors(uu) - { ff }
@@ -82,12 +76,10 @@ OPERATIONS
     res <-- idchecker_revoke_all(uu) =
         PRE
             uu: PEOPLE
-//            & uu: dom(authorized_floors)
             & authorized_floors(uu) /= {}
         THEN
             IF
                 uu: PEOPLE
-//                & uu: dom(authorized_floors)
                 & authorized_floors(uu) /= {}
             THEN
                 authorized_floors(uu) := {}

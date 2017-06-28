@@ -12,8 +12,12 @@ REFINES
 SEES
     Elevator_ctx, People_ctx, OperationResult_ctx
     
-EXTENDS
+IMPORTS
     IdChecker, PeopleInfo
+    
+PROMOTES
+    idchecker_check_floor_authorization,
+    peopleinfo_query_weight
 
 CONCRETE_VARIABLES
     current_floor_i,
@@ -21,26 +25,21 @@ CONCRETE_VARIABLES
     internal_door_state_i,
     floor_door_state_i,
 //    elevator_people_i,
-    elevator_direction_i,
-    elevator_state_i,
-//    elevator_stops_i,
     choosen_elevator_i,
     origin_floor_i,
-    destination_floor_i
+    destination_floor_i,
+    elevator_floor_sequence
     
 INVARIANT
     current_floor_i: ELEVATOR --> FLOOR
     & elevator_weight_i: ELEVATOR --> NAT
     & internal_door_state_i: ELEVATOR --> DOOR_STATE
     & floor_door_state_i: (FLOOR * ELEVATOR) --> DOOR_STATE
-//    & elevator_people_i: ELEVATOR --> seq(PEOPLE)
-    & elevator_direction_i: ELEVATOR --> DIRECTION
-    & elevator_state_i: ELEVATOR --> STATE
-//    & elevator_stops_i: (ELEVATOR * DIRECTION) --> seq(FLOOR)
-    & choosen_elevator_i: PEOPLE +-> ELEVATOR
-    & choosen_elevator_i: PEOPLE +-> ELEVATOR
-    & origin_floor_i: PEOPLE +-> FLOOR
-    & destination_floor_i: PEOPLE +-> FLOOR
+    & elevator_people_i: (ELEVATOR * PEOPLE) --> BOOL
+    & choosen_elevator_i: (PEOPLE * ELEVATOR) --> BOOL
+    & origin_floor_i: (PEOPLE * FLOOR) --> BOOL
+    & destination_floor_i: (PEOPLE * FLOOR) --> BOOL
+    & elevator_floor_sequence_i: ELEVATOR --> seq(FLOOR)
     
 //    & dom(elevator_people) = dom(elevator_people_i)
 //    & ran(elevator_people) = ran(ran(elevator_people_i))
@@ -50,15 +49,14 @@ INITIALISATION
     elevator_weight_i := ELEVATOR * { 0 };
     internal_door_state_i := ELEVATOR * { CLOSED };
     floor_door_state_i := (FLOOR * ELEVATOR) * { CLOSED };
-//    elevator_people_i := ELEVATOR * { {} };
-    elevator_direction_i := ELEVATOR * { UP };
-    elevator_state_i := ELEVATOR * { FREE };
-//    elevator_stops_i := (ELEVATOR * DIRECTION) * { {} };
-    choosen_elevator_i := {};
-    origin_floor_i := {};
-    destination_floor_i := {}
+    elevator_people_i := (ELEVATOR * PEOPLE) * { FALSE };
+    choosen_elevator_i := (PEOPLE * ELEVATOR) * { FALSE };
+    origin_floor_i := (PEOPLE * ELEVATOR) * { FALSE };
+    destination_floor_i := (PEOPLE * ELEVATOR) * { FALSE };
+    elevator_floor_sequence_i := ELEVATOR * { {} }
 
 OPERATIONS
+    
     ff, res <-- elev_current_floor(ee) =
         BEGIN
             IF ee >= 0 & ee <= TOP_FLOOR
@@ -99,25 +97,40 @@ OPERATIONS
         BEGIN
             IF ee >= 0 & ee <= TOP_FLOOR
             THEN
+                IF elevator_floor_sequence(ee) /= {}
+                THEN
+                    IF current_floor(ee) > first(elevator_floor_sequence(ee))
+                    THEN
+                        dir := DOWN
+                    ELSIF current_floor(ee) < first(elevator_floor_sequence(ee))
+                    THEN
+                        dir := UP
+                    ELSE
+                        dir := NONE
+                    END
+                    || state := ATTENDING
+                ELSE
+                    dir := NONE
+                    || state := FREE
+                END
+                || res := SUCCESS
+            ELSE
+                dir := NONE
+                || state := ATTENDING
+                || res := ERROR
+            END
+    
+        BEGIN
+            IF ee >= 0 & ee <= TOP_FLOOR
+            THEN
                 dir := elevator_direction_i(ee);
                 res := SUCCESS
             ELSE
                 dir := UP;
                 res := ERROR
             END
-        END;
-
-    ss, res <-- elev_state(ee) =
-        BEGIN
-            IF ee >= 0 & ee <= TOP_FLOOR
-            THEN
-                ss := elevator_state_i(ee);
-                res := SUCCESS
-            ELSE
-                ss := ATTENDING;
-                res := ERROR
-            END
         END
+
 //        ;
 
 //    elnum, res <-- elev_call_elevator(call_floor, dest_floor, user) =

@@ -26,10 +26,11 @@ typedef enum
 typedef enum
 {
     Elevator_ctx__UP,
-    Elevator_ctx__DOWN
+    Elevator_ctx__DOWN,
+    Elevator_ctx__NONE
     
 } Elevator_ctx__DIRECTION;
-#define Elevator_ctx__DIRECTION__max 2
+#define Elevator_ctx__DIRECTION__max 3
 
 /* Clause CONCRETE_VARIABLES */
 
