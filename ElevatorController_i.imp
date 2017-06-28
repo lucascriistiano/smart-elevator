@@ -24,7 +24,7 @@ CONCRETE_VARIABLES
     elevator_weight_i,
     internal_door_state_i,
     floor_door_state_i,
-//    elevator_people_i,
+    elevator_people_i,
     choosen_elevator_i,
     origin_floor_i,
     destination_floor_i,

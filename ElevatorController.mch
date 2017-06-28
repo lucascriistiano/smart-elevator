@@ -42,7 +42,8 @@ INVARIANT
     & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (floor_door_state(ff, ee) = OPEN => current_floor(ee) = ff))
     & !(ff,ee).((ff: FLOOR & ee: ELEVATOR) => (ff = current_floor(ee) => (floor_door_state(ff, ee) = internal_door_state(ee))))
     & !uu.(uu: PEOPLE & uu: dom(destination_floor) => (destination_floor(uu): authorized_floors(uu)))
-//    & !ee.((ee: ELEVATOR & elevator_floor_sequence(ee) /= {}) => card(elevator_people(ee)) = 0)
+    & !ee.((ee: ELEVATOR & elevator_floor_sequence(ee) = {}) => card(elevator_people(ee)) = 0)
+    & !ee.((ee: ELEVATOR & card(elevator_people(ee)) > 0) => elevator_floor_sequence(ee) /= {})
 
 INITIALISATION
     current_floor := ELEVATOR * { GROUND_FLOOR }
@@ -203,6 +204,13 @@ OPERATIONS
                                - SIGMA uu.(uu: PEOPLE & uu: dom(choosen_elevator |> {ee}) & destination_floor(uu) <= call_floor | people_weight(uu)))
                                    <= WEIGHT_LIMIT
                         THEN
+//                            IF call_floor /= last(elevator_floor_sequence(ee))
+//                            THEN
+//                                elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
+//                            ELSIF dest_floor /= last(elevator_floor_sequence(ee))
+//                            THEN
+//                                elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ dest_floor ]
+//                            END
                             elevator_floor_sequence(ee) := elevator_floor_sequence(ee) ^ [ call_floor, dest_floor ]
                             || choosen_elevator(user) := ee
                             || origin_floor(user) := call_floor
@@ -435,12 +443,12 @@ OPERATIONS
                 & current_floor(ee) /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
             THEN
                 current_floor(ee) := current_floor(ee) + 1
-                || IF current_floor(ee) + 1 /: ran(elevator_people(ee) <| destination_floor)
-                      & current_floor(ee) + 1 /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
-                      & current_floor(ee) + 1 = first(elevator_floor_sequence(ee))  //nao tem ninguem pra descer ou subir no andar seguinte, entao remove da lista
-                   THEN
-                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
-                   END
+//                || IF current_floor(ee) + 1 /: ran(elevator_people(ee) <| destination_floor)
+//                      & current_floor(ee) + 1 /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
+//                      & current_floor(ee) + 1 = first(elevator_floor_sequence(ee))  //nao tem ninguem pra descer ou subir no andar seguinte, entao remove da lista
+//                   THEN
+//                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
+//                   END
                 || res := SUCCESS
             ELSE
                 res := ERROR
@@ -469,12 +477,12 @@ OPERATIONS
                 & current_floor(ee) /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
             THEN
                 current_floor(ee) := current_floor(ee) - 1
-                || IF current_floor(ee) - 1 /: ran(elevator_people(ee) <| destination_floor)
-                      & current_floor(ee) - 1 /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
-                      & current_floor(ee) - 1 = first(elevator_floor_sequence(ee))  //nao tem ninguem pra descer ou subir no andar seguinte, entao remove da lista
-                   THEN
-                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
-                   END
+//                || IF current_floor(ee) - 1 /: ran(elevator_people(ee) <| destination_floor)
+//                      & current_floor(ee) - 1 /: ran(dom(choosen_elevator |> {ee}) <| origin_floor)
+//                      & current_floor(ee) - 1 = first(elevator_floor_sequence(ee))  //nao tem ninguem pra descer ou subir no andar seguinte, entao remove da lista
+//                   THEN
+//                       elevator_floor_sequence(ee) := tail(elevator_floor_sequence(ee))
+//                   END
                 || res := SUCCESS
             ELSE
                 res := ERROR
